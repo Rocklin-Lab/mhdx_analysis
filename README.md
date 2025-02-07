@@ -22,10 +22,20 @@ The code to compute cooperativities (*normalized cooperativity* and *family-norm
 - **Structural Data:** Dataframe with protein names and the number of expected protected amides based on their 3D structure.
 
 ### Structural Modeling Details:
-- Structures from *Ferrari 2025* were generated using **AlphaFold2** via **ColabFold** (version X), followed by **RosettaRelax** applied to the top-scoring model.
+- Structures from *Ferrari 2025* were generated using **AlphaFold2** via **ColabFold**, followed by **RosettaRelax** applied to the top-scoring model.
 - Hydrogen bond information was extracted using a custom **PyRosetta** script.
+- Protein family info was added by populating a PF column to the final `hb.json` dataframe
 
 *Scripts for all these steps are provided. Ensure ColabFold and Rosetta are installed. Scripts include the exact parameters used in our study.*
+
+
+### Script to populate cooperativity metrics from precomputed average trends found in Ferrari 2025
+
+` mhdx_pipeline/scripts/cooperativity/resources/20241030_param_table.json` and `mhdx_pipeline/scripts/cooperativity/resources/240917_cooperativity_std_mean_dict.json` are provided
+
+```
+python mhdx_pipeline/scripts/cooperativity/compute_cooperativity.py --hx deduplicated.json --hb hb.json --param_table  mhdx_pipeline/scripts/cooperativity/resources/20241030_param_table.json --cooperativity_dict  mhdx_pipeline/scripts/cooperativity/resources/240917_cooperativity_std_mean_dict.json --output results/df_HX_cooperativities.json
+```
 
 ---
 
