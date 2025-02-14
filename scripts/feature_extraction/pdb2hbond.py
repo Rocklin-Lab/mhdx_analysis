@@ -158,12 +158,14 @@ def analyze_hbonds(input_file, output_file=None):
     array_acc = df["res_num_acc"].values.tolist()
     array_don = df["res_num_don"].values.tolist()
 
+    n_hb_bb_all = len([i for i in set(array_bb_bb_don + array_bb_sc_don) if (i!=1 and i!=2)])
+
     l = []
-    l.append([name, sequence, n_hb_all, n_hb_bb_bb_don,n_hb_bb_bb_acc,n_hb_sc_sc_don,n_hb_sc_sc_acc, 
+    l.append([name, sequence, n_hb_all, n_hb_bb_all, n_hb_bb_bb_don,n_hb_bb_bb_acc,n_hb_sc_sc_don,n_hb_sc_sc_acc, 
               n_hb_bb_sc_don, n_hb_bb_sc_acc, array_bb_bb_don, array_bb_bb_acc, array_bb_sc_don, 
               array_bb_sc_acc, array_sc_sc_don, array_sc_sc_acc, array_acc,array_don, array_hb_energy])
 
-    result_df = pd.DataFrame(l, columns=["name", "sequence", "n_hb_all", "n_hb_bb_bb_don", 
+    result_df = pd.DataFrame(l, columns=["name", "sequence", "n_hb_all", "n_hb_bb_all", "n_hb_bb_bb_don", 
                                          "n_hb_bb_bb_acc", "n_hb_sc_sc_don", "n_hb_sc_sc_acc", 
                                          "n_hb_bb_sc_don", "n_hb_bb_sc_acc", "array_bb_bb_don",
                                          "array_bb_bb_acc", "array_bb_sc_don", "array_bb_sc_acc", 
