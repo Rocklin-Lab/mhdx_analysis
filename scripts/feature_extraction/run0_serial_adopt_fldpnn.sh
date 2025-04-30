@@ -1,26 +1,26 @@
 #!/bin/bash
 
-# Measure the entire script execution time
+# Measure script execution time
 start_time=$(date +%s)
 
 eval "$(conda shell.bash hook)"
 
-scripts_path="/projects/b1107/allan/software/scripts"
+# Paths to executables
+adopt_exe="python path-to/software/ADOPT/run-adopt.py"
+fldpnn_exe="python path-to/projects/b1107/allan/software/fldpnn/run_flDPnn.py"
 
-# Define paths to executables
-adopt_exe="python /projects/b1107/allan/software/ADOPT/run-adopt.py"
-fldpnn_exe="python /projects/b1107/allan/software/fldpnn/run_flDPnn.py"
-
-# Check if at least two arguments are provided
+# Input validation
 if [ "$#" -lt 1 ]; then
     echo "Usage: $0 <path-to-fasta-folder>"
     exit 1
 fi
 
-# Define other variables
 fastas_folder=$1
 
-# FUNCTION TO CHECK OUTPUT AND LOG ERROR
+# Output directories
+mkdir -p features/adopt features/fldpnn
+
+# Utility: Check output and log error
 check_output() {
     if [ ! -f "$1" ]; then
         echo "Error: Expected output file $1 not found." >> "$error_file"
@@ -29,53 +29,45 @@ check_output() {
     fi
 }
 
-# Setup directories
-echo "Setting up directories..."
-mkdir -p af_prediction/{input,output,pdbs} \
-         rosetta_relax/pdbs \
-         features/{ifeature,rosetta/{,haddox,local},sasa,adopt,contacts,fldpnn,loops,plddt,abego_dssp,hbonds,concatenated,rg,final}
-
-
+# -------------------------
 # Run ADOPT
+# -------------------------
 echo "Activating ADOPT environment..."
 conda activate adopt
 echo "Running ADOPT..."
-for fasta in $(readlink -f ${fastas_folder}/*); do
-	name=$(basename "$fasta" | sed "s|.fasta||g" | sed "s|.a3m||g")
-	error_file="${name}.err"
-	adopt_output="features/adopt/${name}.json"
-	if [ ! -f "$adopt_output" ]; then
-    		$adopt_exe --fasta "$fasta" --output "$adopt_output"
-    		check_output "$adopt_output"
-	else
-    		echo "ADOPT output for ${name} already exists."
-	fi
+for fasta in "$fastas_folder"/*; do
+    name=$(basename "$fasta" | sed 's|.fasta||g' | sed 's|.a3m||g')
+    error_file="${name}.err"
+    output_file="features/adopt/${name}.json"
+    if [ ! -f "$output_file" ]; then
+        $adopt_exe --fasta "$fasta" --output "$output_file"
+        check_output "$output_file"
+    else
+        echo "ADOPT output for ${name} already exists."
+    fi
 done
 conda deactivate
 
-# Run fldpnn
+# -------------------------
+# Run flDPnn
+# -------------------------
 echo "Activating flDPnn environment..."
 conda activate flDPnn
-echo "Running fldpnn..."
-for fasta in $(readlink -f ${fastas_folder}/*); do
-	name=$(basename "$fasta" | sed "s|.fasta||g" | sed "s|.a3m||g" )
-	error_file="${name}.err"
-	fldpnn_output="features/fldpnn/${name}.csv"
-	if [ ! -f "$fldpnn_output" ]; then
-    		echo $fldpnn_exe "$fasta" "features/fldpnn/${name}.csv"
-    		$fldpnn_exe "$fasta" "features/fldpnn/${name}.csv"
-    		check_output "$fldpnn_output"
-	else
-    		echo "fldpnn output for ${name} already exists."
-	fi
+echo "Running flDPnn..."
+for fasta in "$fastas_folder"/*; do
+    name=$(basename "$fasta" | sed 's|.fasta||g' | sed 's|.a3m||g')
+    error_file="${name}.err"
+    output_file="features/fldpnn/${name}.csv"
+    if [ ! -f "$output_file" ]; then
+        $fldpnn_exe "$fasta" "$output_file"
+        check_output "$output_file"
+    else
+        echo "flDPnn output for ${name} already exists."
+    fi
 done
 conda deactivate
 
-
-echo "Workflow completed."
-# Measure end time and calculate total execution time
+# Report execution time
 end_time=$(date +%s)
 execution_time=$((end_time - start_time))
-
-echo "ADOPT/FLPNN Total execution time: ${execution_time} seconds"
-echo "ADOPT/FLPNN Total execution time: ${execution_time} seconds" >> LOGFILE
+echo "Disorder prediction (ADOPT + flDPnn) completed in ${execution_time} seconds."
